@@ -4,11 +4,15 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.vision.CameraSource
@@ -17,11 +21,13 @@ import com.google.android.gms.vision.Detector.Detections
 import com.google.android.gms.vision.text.TextBlock
 import com.google.android.gms.vision.text.TextRecognizer
 
-class MainActivity2 : AppCompatActivity() {
+class MainActivity2 : AppCompatActivity(), CameraSource.PictureCallback {
+    lateinit var bitmap: Bitmap
     private var cameraView: SurfaceView? = null
     private var txtView: TextView? = null
     private var cameraSource: CameraSource? = null
     lateinit var mContext : Context
+    lateinit var imageView: ImageView
 
     @SuppressLint("MissingPermission")
     override fun onRequestPermissionsResult(
@@ -53,11 +59,11 @@ class MainActivity2 : AppCompatActivity() {
         } else {
             cameraSource = CameraSource.Builder(applicationContext, txtRecognizer)
                 .setFacing(CameraSource.CAMERA_FACING_BACK)
-                .setRequestedPreviewSize(1280, 1024)
+                .setRequestedPreviewSize(640, 480)
                 .setRequestedFps(2.0f)
                 .setAutoFocusEnabled(true)
                 .build()
-            cameraView!!.getHolder().addCallback(object : SurfaceHolder.Callback {
+            cameraView!!.holder.addCallback(object : SurfaceHolder.Callback {
                 override fun surfaceChanged(
                     holder: SurfaceHolder,
                     format: Int,
@@ -92,6 +98,12 @@ class MainActivity2 : AppCompatActivity() {
                 }
 
             })
+            if (cameraSource!=null){
+                cameraSource!!.takePicture(null, this)
+                Toast.makeText(this,"ada",Toast.LENGTH_LONG).show()
+            }else{
+                Toast.makeText(this,"null",Toast.LENGTH_LONG).show()
+            }
             txtRecognizer.setProcessor(object : Detector.Processor<TextBlock?> {
                 override fun release() {}
 
@@ -126,5 +138,10 @@ class MainActivity2 : AppCompatActivity() {
 
             })
         }
+    }
+
+    override fun onPictureTaken(p0: ByteArray) {
+        bitmap = BitmapFactory.decodeByteArray(p0, 0, p0.size)
+        imageView.setImageBitmap(bitmap)
     }
 }

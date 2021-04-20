@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +15,7 @@ import android.speech.tts.TextToSpeech.OnInitListener
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -23,17 +26,21 @@ import com.google.android.gms.vision.text.TextBlock
 import com.google.android.gms.vision.text.TextRecognizer
 import java.io.IOException
 
-class MainActivity : AppCompatActivity() {
+@Suppress("DEPRECATION")
+class MainActivity : AppCompatActivity(), CameraSource.PictureCallback {
     private var textView: TextView? = null
+    lateinit var imageView: ImageView
     private var surfaceView: SurfaceView? = null
     private var cameraSource: CameraSource? = null
     private var textRecognizer: TextRecognizer? = null
     private var textToSpeech: TextToSpeech? = null
     private var stringResult: String? = null
     private var mContext: Context? = null
+    lateinit var mBitmap: Bitmap
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        imageView = findViewById(R.id.ImageView)
         mContext = this
         ActivityCompat.requestPermissions(
             this,
@@ -51,10 +58,11 @@ class MainActivity : AppCompatActivity() {
     private fun textRecognizer() {
         textRecognizer = TextRecognizer.Builder(applicationContext).build()
         cameraSource = CameraSource.Builder(applicationContext, textRecognizer)
-            .setRequestedPreviewSize(1280, 1024)
+            .setRequestedPreviewSize(640, 480)
+            .setAutoFocusEnabled(true)
             .build()
         surfaceView = findViewById(R.id.surfaceView)
-        surfaceView!!.getHolder().addCallback(object : SurfaceHolder.Callback {
+        surfaceView!!.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) {
                 try {
                     if (ActivityCompat.checkSelfPermission(
@@ -64,7 +72,7 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         return
                     }
-                    cameraSource!!.start(surfaceView!!.getHolder())
+                    cameraSource!!.start(surfaceView!!.holder)
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
@@ -76,12 +84,15 @@ class MainActivity : AppCompatActivity() {
                 width: Int,
                 height: Int
             ) {
+
+                cameraSource!!.takePicture(null, this@MainActivity)
             }
 
             override fun surfaceDestroyed(holder: SurfaceHolder) {
                 cameraSource!!.stop()
             }
         })
+
         textRecognizer!!.setProcessor(object : Detector.Processor<TextBlock?> {
             override fun release() {}
             override fun receiveDetections(detections: Detections<TextBlock?>) {
@@ -107,8 +118,9 @@ class MainActivity : AppCompatActivity() {
     private fun resultObtained() {
         setContentView(R.layout.activity_main)
         textView = findViewById(R.id.textView)
-        textView!!.setText(stringResult)
+        textView!!.text = stringResult
         textToSpeech!!.speak(stringResult, TextToSpeech.QUEUE_FLUSH, null, null)
+
     }
 
     fun buttonStart(view: View?) {
@@ -118,5 +130,18 @@ class MainActivity : AppCompatActivity() {
 
     fun move(view: View) {
         startActivity(Intent(mContext, MainActivity2::class.java))
+    }
+
+    fun move2(view: View) {
+        startActivity(Intent(mContext, MainActivity6::class.java))
+    }
+
+    override fun onPictureTaken(p0: ByteArray) {
+        mBitmap = BitmapFactory.decodeByteArray(p0, 0, p0.size)
+        imageView.setImageBitmap(mBitmap)
+    }
+
+    fun move3(view: View) {
+        startActivity(Intent(mContext, MainActivity3::class.java))
     }
 }
